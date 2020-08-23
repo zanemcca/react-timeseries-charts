@@ -217,6 +217,7 @@ export default class BarChart extends React.Component {
     }
 
     renderBars() {
+        const stacked = this.props.stacked;
         const spacing = +this.props.spacing;
         const offset = +this.props.offset;
         const minBarHeight = this.props.minBarHeight;
@@ -241,6 +242,10 @@ export default class BarChart extends React.Component {
                 width = endPos - beginPos;
             }
 
+            if (!stacked) {
+                width /= columns.length;
+            }
+
             if (width < 1) {
                 width = 1;
             }
@@ -257,6 +262,7 @@ export default class BarChart extends React.Component {
             let yposPositive = yBase;
             let yposNegative = yBase;
             if (columns) {
+                let xposOffset = 0;
                 for (const column of columns) {
                     const index = event.index();
                     const key = `${series.name()}-${index}-${column}`;
@@ -290,7 +296,7 @@ export default class BarChart extends React.Component {
                         );
                     }
 
-                    const box = { x, y, width, height };
+                    const box = { x: x + xposOffset, y, width, height };
                     const barProps = { key, ...box, style };
 
                     if (this.props.onSelectionChange) {
@@ -303,10 +309,14 @@ export default class BarChart extends React.Component {
 
                     bars.push(<rect {...barProps} />);
 
-                    if (positiveBar) {
-                        yposPositive -= height;
+                    if (stacked) {
+                        if (positiveBar) {
+                            yposPositive -= height;
+                        } else {
+                            yposNegative += height;
+                        }
                     } else {
-                        yposNegative += height;
+                        xposOffset += width;
                     }
                 }
             }
@@ -406,6 +416,12 @@ BarChart.propTypes = {
      * CSS properties.
      */
     style: PropTypes.oneOfType([PropTypes.object, PropTypes.func, PropTypes.instanceOf(Styler)]),
+
+    /**
+     * When false, the bars from different columns are displayed beside eachother,
+     * otherwise they are stacked
+     */
+    stacked: PropTypes.bool,
 
     /**
      * The values to show in the info box. This is an array of
@@ -522,6 +538,7 @@ BarChart.defaultProps = {
     columns: ["value"],
     highlightEntireEvent: false,
     spacing: 1.0,
+    stacked: true,
     offset: 0,
     minBarHeight: 1,
     infoStyle: {
